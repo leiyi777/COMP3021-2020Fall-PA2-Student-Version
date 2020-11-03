@@ -50,7 +50,22 @@ public class ResourceLoader {
     @NotNull
     public static Image getImage(char typeChar) {
         // TODO
-        return null;
+        Image image = null;
+        if(typeChar == 'K')
+            image = new Image(RES_PATH + "/images/whiteK.png");
+        else if(typeChar == 'A')
+            image = new Image(RES_PATH + "/images/whiteA.png");
+        else if(typeChar == 'k')
+            image = new Image(RES_PATH + "/images/blackK.png");
+        else if(typeChar == 'a')
+            image = new Image(RES_PATH + "/images/blackA.png");
+        else if(typeChar == 'l')
+            image = new Image(RES_PATH + "/images/lightBoard.png");
+        else if(typeChar == 'd')
+            image = new Image(RES_PATH + "/images/darkBoard.png");
+        else
+            image = new Image(RES_PATH + "/images/center.png");
+        return image;
     }
 
 
