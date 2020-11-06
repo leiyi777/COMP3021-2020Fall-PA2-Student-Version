@@ -7,6 +7,7 @@ import org.jetbrains.annotations.NotNull;
 
 import java.io.File;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 
 /**
  * Helper class for loading resources from the filesystem.
@@ -21,8 +22,8 @@ public class ResourceLoader {
     static {
         // TODO: Initialize RES_PATH
         // replace null to the actual path
-//        RES_PATH = Path.of("file:src/main/resources");
-        RES_PATH = Path.of("resources");
+        RES_PATH = Path.of(Paths.get("").toAbsolutePath() + "/src/main/resources");
+//        RES_PATH = Path.of("resources/");
     }
 
     /**
@@ -35,7 +36,7 @@ public class ResourceLoader {
     @NotNull
     public static String getResource(@NotNull final String relativePath) {
         // TODO
-        String absolute_path = RES_PATH.toString() + relativePath;
+        String absolute_path = Path.of(RES_PATH + "/" + relativePath).toString();
         if(!new File(absolute_path).exists())
             throw new ResourceNotFoundException("Can not find resource in: " + absolute_path);
         else
