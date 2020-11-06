@@ -1,10 +1,12 @@
 package castle.comp3021.assignment.gui.views.panes;
 
+import castle.comp3021.assignment.gui.GUIMain;
 import castle.comp3021.assignment.gui.controllers.SceneManager;
 import javafx.application.Platform;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.layout.VBox;
+import javafx.stage.Stage;
 import org.jetbrains.annotations.NotNull;
 import castle.comp3021.assignment.gui.views.BigButton;
 import castle.comp3021.assignment.gui.views.BigVBox;
@@ -20,7 +22,7 @@ public class MainMenuPane extends BasePane {
     @NotNull
     private final Button settingsButton = new BigButton("Settings / About ");
     @NotNull
-    private final Button validationButtion = new BigButton("Validation");
+    private final Button validationButton = new BigButton("Validation");
     @NotNull
     private final Button quitButton = new BigButton("Quit");
 
@@ -33,6 +35,8 @@ public class MainMenuPane extends BasePane {
     @Override
     void connectComponents() {
         // TODO
+        container.getChildren().addAll(title, playButton, settingsButton, validationButton, quitButton);
+        this.setCenter(container);
     }
 
     /**
@@ -48,12 +52,19 @@ public class MainMenuPane extends BasePane {
      * Hint:
      *      - playButton -> {@link GamePane}
      *      - settingsButton -> {@link SettingPane}
-     *      - validationButtion -> {@link ValidationPane}
+     *      - validationButton -> {@link ValidationPane}
      *      - quitButton -> quit the game
      */
     @Override
     void setCallbacks() {
         //TODO
+        playButton.setOnMouseClicked(e->SceneManager.getInstance().showPane(GamePane.class));
+        settingsButton.setOnMouseClicked(e->SceneManager.getInstance().showPane(SettingPane.class));
+        validationButton.setOnMouseClicked(e->SceneManager.getInstance().showPane(ValidationPane.class));
+        quitButton.setOnMouseClicked(e->{
+            Stage stage = (Stage) getScene().getWindow();
+            stage.close();
+        });
     }
 
 }
