@@ -38,6 +38,13 @@ public class NumberTextField extends TextField {
      */
     private boolean validate(@NotNull String text) {
         //TODO
+        if(text.isBlank())
+            return true;
+        else{
+            for(int i = 0; i < text.length(); i++)
+                if(!(text.charAt(i) >= '0' && text.charAt(i) <= '9'))
+                    return false;
+        }
         return true;
     }
 
