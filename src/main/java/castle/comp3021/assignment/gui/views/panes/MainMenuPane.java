@@ -58,7 +58,10 @@ public class MainMenuPane extends BasePane {
     @Override
     void setCallbacks() {
         //TODO
-        playButton.setOnMouseClicked(e->SceneManager.getInstance().showPane(GamePane.class));
+        playButton.setOnMouseClicked(e->{
+            SceneManager.getInstance().showPane(GamePane.class);
+            ((GamePane)SceneManager.getInstance().getPane(GamePane.class)).fillValues();
+        });
         settingsButton.setOnMouseClicked(e->SceneManager.getInstance().showPane(SettingPane.class));
         validationButton.setOnMouseClicked(e->SceneManager.getInstance().showPane(ValidationPane.class));
         quitButton.setOnMouseClicked(e->{
