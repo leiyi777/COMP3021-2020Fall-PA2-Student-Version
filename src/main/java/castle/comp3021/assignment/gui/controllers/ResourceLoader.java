@@ -1,9 +1,11 @@
 package castle.comp3021.assignment.gui.controllers;
 
+import castle.comp3021.assignment.gui.GUIMain;
 import castle.comp3021.assignment.protocol.exception.ResourceNotFoundException;
 import javafx.scene.image.Image;
 import org.jetbrains.annotations.NotNull;
 
+import java.io.File;
 import java.nio.file.Path;
 
 /**
@@ -19,7 +21,8 @@ public class ResourceLoader {
     static {
         // TODO: Initialize RES_PATH
         // replace null to the actual path
-        RES_PATH = null;
+//        RES_PATH = Path.of("file:src/main/resources");
+        RES_PATH = Path.of("resources");
     }
 
     /**
@@ -32,7 +35,11 @@ public class ResourceLoader {
     @NotNull
     public static String getResource(@NotNull final String relativePath) {
         // TODO
-        return null;
+        String absolute_path = RES_PATH.toString() + relativePath;
+        if(!new File(absolute_path).exists())
+            throw new ResourceNotFoundException("Can not find resource in: " + absolute_path);
+        else
+            return absolute_path;
     }
 
     /**
@@ -50,21 +57,21 @@ public class ResourceLoader {
     @NotNull
     public static Image getImage(char typeChar) {
         // TODO
-        Image image = null;
+        Image image;
         if(typeChar == 'K')
-            image = new Image(RES_PATH + "/images/whiteK.png");
+            image = new Image(RES_PATH + "/assets/images/whiteK.png");
         else if(typeChar == 'A')
-            image = new Image(RES_PATH + "/images/whiteA.png");
+            image = new Image(RES_PATH + "/assets/images/whiteA.png");
         else if(typeChar == 'k')
-            image = new Image(RES_PATH + "/images/blackK.png");
+            image = new Image(RES_PATH + "/assets/images/blackK.png");
         else if(typeChar == 'a')
-            image = new Image(RES_PATH + "/images/blackA.png");
+            image = new Image(RES_PATH + "/assets/images/blackA.png");
         else if(typeChar == 'l')
-            image = new Image(RES_PATH + "/images/lightBoard.png");
+            image = new Image(RES_PATH + "/assets/images/lightBoard.png");
         else if(typeChar == 'd')
-            image = new Image(RES_PATH + "/images/darkBoard.png");
+            image = new Image(RES_PATH + "/assets/images/darkBoard.png");
         else
-            image = new Image(RES_PATH + "/images/center.png");
+            image = new Image(RES_PATH + "/assets/images/center.png");
         return image;
     }
 
