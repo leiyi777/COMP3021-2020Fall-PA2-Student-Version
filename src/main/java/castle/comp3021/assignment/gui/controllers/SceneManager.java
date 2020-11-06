@@ -68,6 +68,11 @@ public class SceneManager {
      */
     private SceneManager() {
         //TODO
+        mainMenuScene.getRoot().getStyleClass().add("root");
+        settingsScene.getRoot().getStyleClass().add("root");
+        gameplayScene.getRoot().getStyleClass().add("root");
+        settingEditorScene.getRoot().getStyleClass().add("root");
+        validationScene.getRoot().getStyleClass().add("root");
     }
 
     /**
@@ -106,11 +111,16 @@ public class SceneManager {
      * showPane works with help of two parts: {@link SceneManager#scenes} and {@link SceneManager#showScene(Scene)}
      * The logic is: get scene of pane by {@link SceneManager#scenes}
      *      if the corresponding scene exists, then call showScene to show the corresponding scene.
-     *      else throw IllegalArgumentException
+     *      *      else throw IllegalArgumentException
      *
      */
     public void showPane(@NotNull final Class<? extends BasePane> pane) {
         //TODO
+        Scene current_scene = scenes.get(pane);
+        if(current_scene != null)
+            showScene(current_scene);
+        else
+            throw new IllegalArgumentException();
     }
 
     /**
