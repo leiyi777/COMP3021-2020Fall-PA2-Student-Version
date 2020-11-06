@@ -8,6 +8,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 //import castle.comp3021.assignment.gui.views.panes.*;
 
+import java.io.File;
 import java.util.Map;
 
 /**
@@ -68,11 +69,22 @@ public class SceneManager {
      */
     private SceneManager() {
         //TODO
-        mainMenuScene.getRoot().getStyleClass().add("root");
-        settingsScene.getRoot().getStyleClass().add("root");
-        gameplayScene.getRoot().getStyleClass().add("root");
-        settingEditorScene.getRoot().getStyleClass().add("root");
-        validationScene.getRoot().getStyleClass().add("root");
+        File css = new File(ViewConfig.CSS_STYLES_PATH);
+
+        mainMenuScene.getStylesheets().clear();
+        mainMenuScene.getStylesheets().add("file:///" + css.getAbsolutePath().replace("\\", "/"));
+
+        settingsScene.getStylesheets().clear();
+        settingsScene.getStylesheets().add("file:///" + css.getAbsolutePath().replace("\\", "/"));
+
+        gameplayScene.getStylesheets().clear();
+        gameplayScene.getStylesheets().add("file:///" + css.getAbsolutePath().replace("\\", "/"));
+
+        settingEditorScene.getStylesheets().clear();
+        settingEditorScene.getStylesheets().add("file:///" + css.getAbsolutePath().replace("\\", "/"));
+
+        validationScene.getStylesheets().clear();
+        validationScene.getStylesheets().add("file:///" + css.getAbsolutePath().replace("\\", "/"));
     }
 
     /**
