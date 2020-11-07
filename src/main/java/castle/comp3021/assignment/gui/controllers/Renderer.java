@@ -80,17 +80,17 @@ public class Renderer {
         Image lightBoard = ResourceLoader.getImage('l');
         Image center = ResourceLoader.getImage('c');
 
-        for(int height = 0; height < boardSize; height++){
-            for(int width = 0; width < boardSize; width++){
+        for(int height = 0; height < canvas.getHeight() / boardSize; height++){
+            for(int width = 0; width < canvas.getWidth() / boardSize; width++){
                 int pixelHeight = height * boardSize;
                 int pixelWidth = width * boardSize;
                 if((height + width) % 2 == 0) {
-                    gc.drawImage(darkBoard, pixelWidth, pixelHeight);
-                }
-                else{
                     gc.drawImage(lightBoard, pixelWidth, pixelHeight);
                 }
-                if(centerPlace.x() == height && centerPlace.y() == width)
+                else{
+                    gc.drawImage(darkBoard, pixelWidth, pixelHeight);
+                }
+                if(centerPlace.x() == width && centerPlace.y() == height)
                     gc.drawImage(center, pixelWidth, pixelHeight);
             }
         }
@@ -103,15 +103,16 @@ public class Renderer {
      */
     public static void renderPieces(@NotNull Canvas canvas, @NotNull Piece[][] board) {
         //TODO
-        int boardSize = board.length;
+        int size = board.length;
         int CELL_SIZE = ViewConfig.PIECE_SIZE;
         GraphicsContext gc = canvas.getGraphicsContext2D();
 
-        for(int height = 0; height < boardSize; height++){
-            for(int width = 0; width < boardSize; width++){
+        for(int height = 0; height < size; height++){
+            for(int width = 0; width < size; width++){
                 int pixelHeight = height * CELL_SIZE;
                 int pixelWidth = width * CELL_SIZE;
-                gc.drawImage(board[width][height].getImageRep().image, pixelWidth, pixelHeight);
+                if (board[width][height] != null)
+                    gc.drawImage(board[width][height].getImageRep().image, pixelWidth, pixelHeight);
             }
         }
     }
