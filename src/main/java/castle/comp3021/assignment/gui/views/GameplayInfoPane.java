@@ -28,6 +28,7 @@ public class GameplayInfoPane extends BigVBox {
     public GameplayInfoPane(IntegerProperty score1Property, IntegerProperty score2Property, StringProperty curPlayer,
                             IntegerProperty ticksElapsed) {
         //TODO
+        bindTo(score1Property, score2Property, curPlayer, ticksElapsed);
     }
 
     /**
