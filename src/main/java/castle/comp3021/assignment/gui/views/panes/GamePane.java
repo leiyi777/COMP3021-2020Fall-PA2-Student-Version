@@ -6,6 +6,7 @@ import castle.comp3021.assignment.gui.controllers.SceneManager;
 import castle.comp3021.assignment.gui.views.BigButton;
 import castle.comp3021.assignment.gui.views.BigVBox;
 import castle.comp3021.assignment.gui.views.NumberTextField;
+import castle.comp3021.assignment.protocol.Configuration;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
@@ -110,7 +111,8 @@ public class GamePane extends BasePane {
                 globalConfiguration.setNumMovesProtection(numMovesProtection);
                 globalConfiguration.setFirstPlayerHuman(isHumanPlayer1Button.getText().equals("Player 1: Human"));
                 globalConfiguration.setSecondPlayerHuman(isHumanPlayer2Button.getText().equals("Player 2: Human"));
-                fxJesonMor = new FXJesonMor(globalConfiguration);
+                Configuration newConfiguration = new Configuration(globalConfiguration.getSize(), globalConfiguration.getPlayers(), globalConfiguration.getNumMovesProtection());
+                fxJesonMor = new FXJesonMor(newConfiguration);
                 startGame(fxJesonMor);
             }
             else {
