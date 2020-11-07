@@ -106,6 +106,10 @@ public class GamePane extends BasePane {
             Alert errorAlert = new Alert(Alert.AlertType.ERROR);
             Optional<String> errorMsg = validate(size, numMovesProtection);
             if(errorMsg == null) {
+                globalConfiguration.setSize(size);
+                globalConfiguration.setNumMovesProtection(numMovesProtection);
+                globalConfiguration.setFirstPlayerHuman(isHumanPlayer1Button.getText().equals("Player 1: Human"));
+                globalConfiguration.setSecondPlayerHuman(isHumanPlayer2Button.getText().equals("Player 2: Human"));
                 fxJesonMor = new FXJesonMor(globalConfiguration);
                 startGame(fxJesonMor);
             }
