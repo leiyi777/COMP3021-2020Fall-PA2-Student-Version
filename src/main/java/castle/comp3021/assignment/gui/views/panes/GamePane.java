@@ -112,6 +112,7 @@ public class GamePane extends BasePane {
                 globalConfiguration.setFirstPlayerHuman(isHumanPlayer1Button.getText().equals("Player 1: Human"));
                 globalConfiguration.setSecondPlayerHuman(isHumanPlayer2Button.getText().equals("Player 2: Human"));
                 Configuration newConfiguration = new Configuration(globalConfiguration.getSize(), globalConfiguration.getPlayers(), globalConfiguration.getNumMovesProtection());
+                newConfiguration.setAllInitialPieces();
                 fxJesonMor = new FXJesonMor(newConfiguration);
                 startGame(fxJesonMor);
             }
