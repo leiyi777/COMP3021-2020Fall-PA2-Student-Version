@@ -1,5 +1,6 @@
 package castle.comp3021.assignment.gui.controllers;
 
+import castle.comp3021.assignment.gui.ViewConfig;
 import castle.comp3021.assignment.protocol.Piece;
 import castle.comp3021.assignment.protocol.Place;
 import javafx.scene.canvas.Canvas;
@@ -74,6 +75,25 @@ public class Renderer {
      */
     public static void renderChessBoard(@NotNull Canvas canvas, int boardSize, Place centerPlace){
         //TODO
+        GraphicsContext gc = canvas.getGraphicsContext2D();
+        Image darkBoard = ResourceLoader.getImage('d');
+        Image lightBoard = ResourceLoader.getImage('l');
+        Image center = ResourceLoader.getImage('c');
+
+        for(int height = 0; height < boardSize; height++){
+            for(int width = 0; width < boardSize; width++){
+                int pixelHeight = height * boardSize;
+                int pixelWidth = width * boardSize;
+                if((height + width) % 2 == 0) {
+                    gc.drawImage(darkBoard, pixelWidth, pixelHeight);
+                }
+                else{
+                    gc.drawImage(lightBoard, pixelWidth, pixelHeight);
+                }
+                if(centerPlace.x() == height && centerPlace.y() == width)
+                    gc.drawImage(center, pixelWidth, pixelHeight);
+            }
+        }
     }
 
     /**
@@ -83,6 +103,17 @@ public class Renderer {
      */
     public static void renderPieces(@NotNull Canvas canvas, @NotNull Piece[][] board) {
         //TODO
+        int boardSize = board.length;
+        int CELL_SIZE = ViewConfig.PIECE_SIZE;
+        GraphicsContext gc = canvas.getGraphicsContext2D();
+
+        for(int height = 0; height < boardSize; height++){
+            for(int width = 0; width < boardSize; width++){
+                int pixelHeight = height * CELL_SIZE;
+                int pixelWidth = width * CELL_SIZE;
+                gc.drawImage(board[width][height].getImageRep().image, pixelWidth, pixelHeight);
+            }
+        }
     }
 
 }
