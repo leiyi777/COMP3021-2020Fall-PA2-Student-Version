@@ -2,17 +2,21 @@ package castle.comp3021.assignment.gui.views.panes;
 import castle.comp3021.assignment.gui.DurationTimer;
 import castle.comp3021.assignment.gui.ViewConfig;
 import castle.comp3021.assignment.gui.controllers.AudioManager;
+import castle.comp3021.assignment.gui.controllers.SceneManager;
 import castle.comp3021.assignment.gui.views.BigButton;
 import castle.comp3021.assignment.gui.views.BigVBox;
 import castle.comp3021.assignment.gui.views.NumberTextField;
 import castle.comp3021.assignment.gui.views.SideMenuVBox;
 import castle.comp3021.assignment.protocol.Configuration;
+import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextArea;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.VBox;
+
 import org.jetbrains.annotations.NotNull;
+
 
 import java.util.Optional;
 
@@ -59,6 +63,7 @@ public class SettingPane extends BasePane {
 
 
     public SettingPane() {
+        fillValues();
         connectComponents();
         styleComponents();
         setCallbacks();
@@ -70,6 +75,11 @@ public class SettingPane extends BasePane {
     @Override
     void connectComponents() {
         //TODO
+        leftContainer.getChildren().addAll(title, sizeBox, numMovesProtectionBox, durationBox,
+                isHumanPlayer1Button, isHumanPlayer2Button, toggleSoundButton, saveButton, returnButton);
+        centerContainer.getChildren().add(infoText);
+        this.setLeft(leftContainer);
+        this.setCenter(centerContainer);
     }
 
     @Override
@@ -96,6 +106,50 @@ public class SettingPane extends BasePane {
     @Override
     void setCallbacks() {
         //TODO
+        isHumanPlayer1Button.setOnMouseClicked(e->{
+            String currentText = isHumanPlayer1Button.getText();
+            if (currentText.equals("Player 1: Computer")) {
+                isHumanPlayer1Button.setText("Player 1: Human");
+            } else {
+                isHumanPlayer1Button.setText("Player 1: Computer");
+            }
+        });
+
+        isHumanPlayer2Button.setOnMouseClicked(e->{
+            String currentText = isHumanPlayer2Button.getText();
+            if (currentText.equals("Player 2: Computer")) {
+                isHumanPlayer2Button.setText("Player 2: Human");
+            } else {
+                isHumanPlayer2Button.setText("Player 2: Computer");
+            }
+        });
+
+        toggleSoundButton.setOnMouseClicked(e->{
+            String currentText = toggleSoundButton.getText();
+            if (currentText.equals("Sound FX: Enabled")) {
+                toggleSoundButton.setText("Sound FX: Disabled");
+            } else {
+                toggleSoundButton.setText("Sound FX: Enabled");
+            }
+        });
+
+        saveButton.setOnMouseClicked(e->{
+            int size = sizeFiled.getValue();
+            int numMovesProtection = numMovesProtectionField.getValue();
+            int duration = durationField.getValue();
+            Alert errorAlert = new Alert(Alert.AlertType.ERROR);
+            Optional<String> errorMsg = validate(size, numMovesProtection, duration);
+            if(errorMsg == null)
+                returnToMainMenu(true);
+            else {
+                errorAlert.setTitle("Error!");
+                errorAlert.setHeaderText("Validation Failed");
+                errorAlert.setContentText(errorMsg.get());
+                errorAlert.show();
+            }
+        });
+
+        returnButton.setOnMouseClicked(e-> SceneManager.getInstance().showPane(MainMenuPane.class));
     }
 
     /**
@@ -103,6 +157,16 @@ public class SettingPane extends BasePane {
      */
     private void fillValues() {
         // TODO
+        String defaultPlayer1 = globalConfiguration.isFirstPlayerHuman() ? "Player 1: Human" : "Player 1: Computer";
+        String defaultPlayer2 = globalConfiguration.isSecondPlayerHuman() ? "Player 2: Human" : "Player 2: Computer";
+        String defaultSound = AudioManager.getInstance().isEnabled() ? "Sound FX: Enabled" : "Sound FX: Disabled";
+
+        isHumanPlayer1Button.setText(defaultPlayer1);
+        isHumanPlayer2Button.setText(defaultPlayer2);
+        toggleSoundButton.setText(defaultSound);
+
+        sizeFiled.setText(String.valueOf(globalConfiguration.getSize()));
+        numMovesProtectionField.setText(String.valueOf(globalConfiguration.getNumMovesProtection()));
     }
 
     /**
@@ -112,6 +176,25 @@ public class SettingPane extends BasePane {
      */
     private void returnToMainMenu(final boolean writeBack) {
         //TODO
+        if(writeBack){
+            String settingPlayer1 = isHumanPlayer1Button.getText();
+            boolean isPlayer1Human = settingPlayer1.equals("Player 1: Human");
+            globalConfiguration.setFirstPlayerHuman(isPlayer1Human);
+
+            String settingPlayer2 = isHumanPlayer2Button.getText();
+            boolean isPlayer2Human = settingPlayer2.equals("Player 2: Human");
+            globalConfiguration.setSecondPlayerHuman(isPlayer2Human);
+
+            String settingAudio = toggleSoundButton.getText();
+            boolean audioEnabled = settingAudio.equals("Sound FX: Enabled");
+            AudioManager.getInstance().setEnabled(audioEnabled);
+
+            globalConfiguration.setSize(sizeFiled.getValue());
+            globalConfiguration.setNumMovesProtection(numMovesProtectionField.getValue());
+            DurationTimer.setDefaultEachRound(durationField.getValue());
+
+            SceneManager.getInstance().showPane(MainMenuPane.class);
+        }
     }
 
     /**
@@ -125,6 +208,17 @@ public class SettingPane extends BasePane {
      */
     public static Optional<String> validate(int size, int numProtection, int duration) {
         //TODO
-        return null;
+        if(size < 3)
+            return Optional.of(ViewConfig.MSG_BAD_SIZE_NUM);
+        else if(size % 2 != 1)
+            return Optional.of(ViewConfig.MSG_ODD_SIZE_NUM);
+        else if(size > 26)
+            return Optional.of(ViewConfig.MSG_UPPERBOUND_SIZE_NUM);
+        else if(numProtection < 0)
+            return Optional.of(ViewConfig.MSG_NEG_PROT);
+        else if(duration < 0)
+            return Optional.of(ViewConfig.MSG_NEG_DURATION);
+        else
+            return null;
     }
 }
