@@ -21,9 +21,7 @@ public class ResourceLoader {
 
     static {
         // TODO: Initialize RES_PATH
-        // replace null to the actual path
         RES_PATH = Path.of(Paths.get("").toAbsolutePath() + "/src/main/resources");
-//        RES_PATH = Path.of("resources/");
     }
 
     /**
