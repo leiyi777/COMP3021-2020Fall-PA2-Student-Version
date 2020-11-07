@@ -6,6 +6,7 @@ import castle.comp3021.assignment.gui.controllers.SceneManager;
 import castle.comp3021.assignment.gui.views.BigButton;
 import castle.comp3021.assignment.gui.views.BigVBox;
 import castle.comp3021.assignment.gui.views.NumberTextField;
+import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.layout.BorderPane;
@@ -55,6 +56,9 @@ public class GamePane extends BasePane {
     @Override
     void connectComponents() {
         //TODO
+        container.getChildren().addAll(title, sizeBox, numMovesProtectionBox, isHumanPlayer1Button,
+                isHumanPlayer2Button, useDefaultButton, playButton, returnButton);
+        this.setCenter(container);
     }
 
     @Override
@@ -76,6 +80,44 @@ public class GamePane extends BasePane {
     @Override
     void setCallbacks() {
         //TODO
+        isHumanPlayer1Button.setOnMouseClicked(e->{
+            String currentText = isHumanPlayer1Button.getText();
+            if (currentText.equals("Player 1: Computer")) {
+                isHumanPlayer1Button.setText("Player 1: Human");
+            } else {
+                isHumanPlayer1Button.setText("Player 1: Computer");
+            }
+        });
+
+        isHumanPlayer2Button.setOnMouseClicked(e->{
+            String currentText = isHumanPlayer2Button.getText();
+            if (currentText.equals("Player 2: Computer")) {
+                isHumanPlayer2Button.setText("Player 2: Human");
+            } else {
+                isHumanPlayer2Button.setText("Player 2: Computer");
+            }
+        });
+
+        useDefaultButton.setOnMouseClicked(e-> fillValues());
+
+        playButton.setOnMouseClicked(e-> {
+            int size = sizeFiled.getValue();
+            int numMovesProtection = numMovesProtectionField.getValue();
+            Alert errorAlert = new Alert(Alert.AlertType.ERROR);
+            Optional<String> errorMsg = validate(size, numMovesProtection);
+            if(errorMsg == null) {
+                fxJesonMor = new FXJesonMor(globalConfiguration);
+                startGame(fxJesonMor);
+            }
+            else {
+                errorAlert.setTitle("Error");
+                errorAlert.setHeaderText("Validation Failed");
+                errorAlert.setContentText(errorMsg.get());
+                errorAlert.show();
+            }
+        });
+
+        returnButton.setOnMouseClicked(e->SceneManager.getInstance().showPane(MainMenuPane.class));
     }
 
     /**
@@ -95,6 +137,11 @@ public class GamePane extends BasePane {
      */
     void fillValues(){
         // TODO
+        isHumanPlayer1Button.setText(globalConfiguration.isFirstPlayerHuman() ? "Player 1: Human" : "Player 1: Computer");
+        isHumanPlayer2Button.setText(globalConfiguration.isSecondPlayerHuman() ? "Player 2: Human" : "Player 2: Computer");
+
+        sizeFiled.setText(String.valueOf(globalConfiguration.getSize()));
+        numMovesProtectionField.setText(String.valueOf(globalConfiguration.getNumMovesProtection()));
     }
 
     /**
@@ -107,6 +154,15 @@ public class GamePane extends BasePane {
      */
     public static Optional<String> validate(int size, int numProtection) {
         //TODO
-        return null;
+        if(size < 3)
+            return Optional.of(ViewConfig.MSG_BAD_SIZE_NUM);
+        else if(size % 2 != 1)
+            return Optional.of(ViewConfig.MSG_ODD_SIZE_NUM);
+        else if(size > 26)
+            return Optional.of(ViewConfig.MSG_UPPERBOUND_SIZE_NUM);
+        else if(numProtection < 0)
+            return Optional.of(ViewConfig.MSG_NEG_PROT);
+        else
+            return null;
     }
 }
