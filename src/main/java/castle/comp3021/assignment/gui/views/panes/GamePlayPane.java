@@ -85,6 +85,7 @@ public class GamePlayPane extends BasePane {
      *      - other global variable you want to note down.
      */
     // TODO
+    FXJesonMor fxJesonMor;
 
 
     public GamePlayPane() {
@@ -99,6 +100,14 @@ public class GamePlayPane extends BasePane {
     @Override
     void connectComponents() {
         //TODO
+        topBar.getChildren().add(title);
+        topBar.setAlignment(Pos.CENTER);
+        leftContainer.getChildren().addAll(parameterText, historyLabel,
+                scrollPane, startButton, restartButton, returnButton);
+//        centerContainer.getChildren().addAll(gamePlayCanvas, infoPane);
+        this.setTop(topBar);
+        this.setLeft(leftContainer);
+        this.setCenter(centerContainer);
     }
 
     /**
@@ -132,6 +141,15 @@ public class GamePlayPane extends BasePane {
      */
     void initializeGame(@NotNull FXJesonMor fxJesonMor) {
         //TODO
+        this.fxJesonMor = fxJesonMor;
+        startButton.setDisable(false);
+        restartButton.setDisable(true);
+        parameterText.setText("Parameters:" + "\n" + "\n" +
+                "Size of board: " + globalConfiguration.getSize() + "\n"+
+                "Num of protection moves: " + globalConfiguration.getNumMovesProtection() + "\n" +
+                "Player " + globalConfiguration.getPlayers()[0].getName() + (globalConfiguration.isFirstPlayerHuman() ? "(human)" : "(computer)") + "\n" +
+                "Player " + globalConfiguration.getPlayers()[1].getName() + (globalConfiguration.isSecondPlayerHuman() ? "(human)" : "(computer)") + "\n"
+        );
     }
 
     /**
@@ -144,7 +162,7 @@ public class GamePlayPane extends BasePane {
     /**
      * disable canvas clickable
      */
-    private void disnableCanvas(){
+    private void disableCanvas(){
         gamePlayCanvas.setDisable(true);
     }
 
@@ -246,7 +264,7 @@ public class GamePlayPane extends BasePane {
      *      - ContentText: Game progress will be lost.
      *      - Buttons: CANCEL and OK
      *  If click OK, then refer to {@link GamePlayPane#doQuitToMenu()}
-     *  If click Cancle, than do nothing.
+     *  If click Cancel, than do nothing.
      */
     private void doQuitToMenuAction() {
         // TODO
