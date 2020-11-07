@@ -6,6 +6,7 @@ import javafx.scene.image.Image;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.File;
+import java.net.URL;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
@@ -58,19 +59,19 @@ public class ResourceLoader {
         // TODO
         Image image;
         if(typeChar == 'K')
-            image = new Image(RES_PATH + "/assets/images/whiteK.png");
+            image = new Image("file:" + getResource("assets/images/whiteK.png"));
         else if(typeChar == 'A')
-            image = new Image(RES_PATH + "/assets/images/whiteA.png");
+            image = new Image("file:" + getResource("assets/images/whiteA.png"));
         else if(typeChar == 'k')
-            image = new Image(RES_PATH + "/assets/images/blackK.png");
+            image = new Image("file:" + getResource("assets/images/blackK.png"));
         else if(typeChar == 'a')
-            image = new Image(RES_PATH + "/assets/images/blackA.png");
+            image = new Image("file:" + getResource("assets/images/blackA.png"));
         else if(typeChar == 'l')
-            image = new Image(RES_PATH + "/assets/images/lightBoard.png");
+            image = new Image("file:" + getResource("assets/images/lightBoard.png"));
         else if(typeChar == 'd')
-            image = new Image(RES_PATH + "/assets/images/darkBoard.png");
+            image = new Image("file:" + getResource("assets/images/darkBoard.png"));
         else
-            image = new Image(RES_PATH + "/assets/images/center.png");
+            image = new Image("file:" + getResource("assets/images/center.png"));
         return image;
     }
 
