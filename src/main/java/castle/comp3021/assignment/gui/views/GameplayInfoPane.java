@@ -1,10 +1,17 @@
 package castle.comp3021.assignment.gui.views;
 
 import castle.comp3021.assignment.gui.DurationTimer;
+import javafx.beans.binding.Bindings;
 import javafx.beans.property.IntegerProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
+import javafx.css.StyleConverter;
 import javafx.scene.control.Label;
+import javafx.util.StringConverter;
+import javafx.util.converter.DefaultStringConverter;
+import javafx.util.converter.FormatStringConverter;
+import javafx.util.converter.IntegerStringConverter;
+import javafx.util.converter.NumberStringConverter;
 
 import java.time.Duration;
 
@@ -72,9 +79,9 @@ public class GameplayInfoPane extends BigVBox {
     private void bindTo(IntegerProperty score1Property, IntegerProperty score2Property, StringProperty curPlayer,
                         IntegerProperty ticksElapsed) {
         // TODO
-        score1Label.textProperty().bind(new SimpleStringProperty("Score of player 1: "+ score1Property.getValue()));
-        score2Label.textProperty().bind(new SimpleStringProperty("Score of player 2: "+ score2Property.getValue()));
-        timerLabel.textProperty().bind(new SimpleStringProperty("Time: " + formatTime(ticksElapsed.getValue())));
-        curPlayerLabel.textProperty().bind(new SimpleStringProperty("Current player: " + curPlayer.getValue()));
+        score1Label.textProperty().bindBidirectional(score1Property, new NumberStringConverter("Score of player 1: "));
+        score2Label.textProperty().bindBidirectional(score2Property, new NumberStringConverter("Score of player 2: "));
+        timerLabel.textProperty().bindBidirectional(ticksElapsed, new NumberStringConverter("Time: "));
+        curPlayerLabel.textProperty().bind(Bindings.concat("Current player: ").concat(curPlayer));
     }
 }
