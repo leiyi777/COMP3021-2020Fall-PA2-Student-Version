@@ -1,5 +1,6 @@
 package castle.comp3021.assignment.gui;
 
+import javafx.application.Platform;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
@@ -60,17 +61,15 @@ public class DurationTimer {
     void start() {
         //TODO
         ticksElapsed = 0;
-
         flowTimer.scheduleAtFixedRate(new TimerTask() {
             @Override
             public void run() {
-                ticksElapsed++;
+                Platform.runLater(() -> {
+                    ticksElapsed++;
+                    onTickCallbacks.get(0).run();
+                });
             }
-
-            public int getTimePassed(){
-                return ticksElapsed;
-            }
-        }, 0, 1000);
+        }, 1000, 1000);
     }
 
     /**
@@ -80,6 +79,7 @@ public class DurationTimer {
         //TODO
         flowTimer.cancel();
         flowTimer.purge();
+        onTickCallbacks.remove(0);
     }
 
 }
