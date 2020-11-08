@@ -61,6 +61,7 @@ public class DurationTimer {
     void start() {
         //TODO
         ticksElapsed = 0;
+        flowTimer = new Timer(true);
         flowTimer.scheduleAtFixedRate(new TimerTask() {
             @Override
             public void run() {
@@ -79,7 +80,6 @@ public class DurationTimer {
         //TODO
         flowTimer.cancel();
         flowTimer.purge();
-        onTickCallbacks.remove(0);
     }
 
 }
