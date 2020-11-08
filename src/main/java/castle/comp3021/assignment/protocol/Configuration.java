@@ -264,7 +264,8 @@ public class Configuration implements Cloneable {
     @Override
     public String toString() {
         // TODO
-        return ("size:" + getSize() + "\n"+
+        return ("#Game setting" + "\n" + "\n" +
+                "size:" + getSize() + "\n"+
                 "numMovesProtection:" + getNumMovesProtection() + "\n" +
                 "centralPlace:(" + getCentralPlace().x() + "," + getCentralPlace().y() + ")\n" +
                 "numPlayers:" + getPlayers().length + "\n"+ "\n" +
