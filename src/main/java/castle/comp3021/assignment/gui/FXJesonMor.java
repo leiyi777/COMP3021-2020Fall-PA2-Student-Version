@@ -1,5 +1,6 @@
 package castle.comp3021.assignment.gui;
 
+import castle.comp3021.assignment.gui.controllers.AudioManager;
 import castle.comp3021.assignment.textversion.JesonMor;
 import castle.comp3021.assignment.protocol.*;
 import castle.comp3021.assignment.gui.controllers.Renderer;
@@ -29,6 +30,8 @@ public class FXJesonMor extends JesonMor {
      */
     public FXJesonMor(Configuration configuration){
         //TODO
+        super(configuration);
+        durationTimer = new DurationTimer();
     }
 
     /**
@@ -39,6 +42,8 @@ public class FXJesonMor extends JesonMor {
      */
     public void renderBoard(@NotNull Canvas canvas){
         //TODO
+        Renderer.renderChessBoard(canvas, ViewConfig.PIECE_SIZE, configuration.getCentralPlace());
+        Renderer.renderPieces(canvas, this.board);
     }
 
     /**
@@ -93,5 +98,9 @@ public class FXJesonMor extends JesonMor {
 
         // update score to 2 properties
         // TODO: update scorePlayer1Property and scorePlayer2Property
+        if(player.getName() == "White")
+            scorePlayer1Property.setValue(newScore);
+        else
+            scorePlayer2Property.setValue(newScore);
     }
 }
