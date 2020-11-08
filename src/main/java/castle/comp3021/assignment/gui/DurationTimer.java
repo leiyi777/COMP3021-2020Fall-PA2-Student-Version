@@ -59,6 +59,18 @@ public class DurationTimer {
      */
     void start() {
         //TODO
+        ticksElapsed = 0;
+
+        flowTimer.scheduleAtFixedRate(new TimerTask() {
+            @Override
+            public void run() {
+                ticksElapsed++;
+            }
+
+            public int getTimePassed(){
+                return ticksElapsed;
+            }
+        }, 0, 1000);
     }
 
     /**
@@ -66,6 +78,8 @@ public class DurationTimer {
      */
     void stop() {
         //TODO
+        flowTimer.cancel();
+        flowTimer.purge();
     }
 
 }
