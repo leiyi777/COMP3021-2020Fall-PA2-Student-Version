@@ -1,24 +1,28 @@
 package castle.comp3021.assignment.gui.views.panes;
 
 import castle.comp3021.assignment.gui.FXJesonMor;
-import castle.comp3021.assignment.protocol.Configuration;
-import castle.comp3021.assignment.protocol.MoveRecord;
-import castle.comp3021.assignment.protocol.Place;
+import castle.comp3021.assignment.gui.controllers.SceneManager;
+import castle.comp3021.assignment.protocol.*;
 import castle.comp3021.assignment.protocol.io.Deserializer;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.concurrent.Task;
 import javafx.scene.canvas.Canvas;
+import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.layout.VBox;
 import javafx.stage.FileChooser;
+import javafx.stage.Stage;
+import javafx.stage.Window;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import castle.comp3021.assignment.gui.views.BigButton;
 import castle.comp3021.assignment.gui.views.BigVBox;
 
 import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.PrintWriter;
 import java.util.*;
 
 
@@ -63,6 +67,12 @@ public class ValidationPane extends BasePane{
     @Override
     void connectComponents() {
         // TODO
+        leftContainer.getChildren().addAll(title, explanation, loadButton, validationButton, replayButton, returnButton);
+        centerContainer.getChildren().add(gamePlayCanvas);
+        validationButton.setDisable(true);
+        replayButton.setDisable(true);
+        this.setLeft(leftContainer);
+        this.setCenter(centerContainer);
     }
 
     @Override
@@ -78,6 +88,13 @@ public class ValidationPane extends BasePane{
     @Override
     void setCallbacks() {
         //TODO
+        loadButton.setOnMouseClicked(e->{
+            if(loadFromFile())
+                validationButton.setDisable(false);
+        });
+        validationButton.setOnMouseClicked(e->onClickValidationButton());
+        replayButton.setOnMouseClicked(e->onClickReplayButton());
+        returnButton.setOnMouseClicked(e-> returnToMainMenu());
     }
 
     /**
@@ -95,7 +112,27 @@ public class ValidationPane extends BasePane{
      */
     private boolean loadFromFile() {
         //TODO
-        return false;
+        File loaded;
+        Deserializer deserializer;
+        try {
+            loaded = getTargetLoadFile();
+            deserializer = new Deserializer(loaded.toPath());
+            deserializer.parseGame();
+            loadedConfiguration = deserializer.getLoadedConfiguration();
+            loadedConfiguration.setAllInitialPieces();
+            loadedcentralPlace = deserializer.getLoadedConfiguration().getCentralPlace();
+            loadedGame = new FXJesonMor(loadedConfiguration);
+            loadedMoveRecords = deserializer.getMoveRecords();
+            storedScores = deserializer.getStoredScores();
+        } catch (Error e) {
+            showErrorConfiguration(e.getMessage());
+            return false;
+        } catch (Exception e) {
+            showErrorConfiguration(e.getMessage());
+            return false;
+        }
+
+        return true;
     }
 
     /**
@@ -107,6 +144,26 @@ public class ValidationPane extends BasePane{
      */
     private void onClickValidationButton(){
         //TODO
+        if(loadedConfiguration == null || loadedMoveRecords == null ||
+                loadedGame == null || loadedcentralPlace == null || storedScores == null)
+            showErrorMsg();
+        else {
+            boolean valid = false;
+            try {
+                valid = validateHistory();
+            } catch (Exception e){
+                showErrorConfiguration(e.getMessage());
+            }
+            if (valid) {
+                Alert confirm = new Alert(Alert.AlertType.INFORMATION);
+                confirm.setTitle("Confirm");
+                confirm.setHeaderText("Pass validation!");
+                confirm.show();
+
+                validationButton.setDisable(true);
+                replayButton.setDisable(false);
+            }
+        }
     }
 
     /**
@@ -130,7 +187,34 @@ public class ValidationPane extends BasePane{
      */
     private boolean validateHistory(){
         //TODO
-        return true;
+        boolean configurationValid = true;
+        for(int i = 0; i < loadedMoveRecords.size(); i++){
+            Player currentPlayer = loadedMoveRecords.get(i).getPlayer();
+            Move currentMove = loadedMoveRecords.get(i).getMove();
+            Piece currentPiece = loadedGame.getPiece(currentMove.getSource());
+            if(currentPiece.getPlayer().getName().equals(currentPlayer.getName())) {
+                boolean moveValid = false;
+                Move[] availableMoves = loadedGame.getAvailableMoves(currentPlayer);
+                for(int j = 0; j < availableMoves.length; j++) {
+                    if (availableMoves[j].equals(currentMove)) {
+                        moveValid = true;
+                        break;
+                    }
+                }
+                if (moveValid){
+                    loadedGame.movePiece(currentMove);
+                    loadedGame.updateScore(currentPlayer, currentPiece, currentMove);
+                } else{
+                    configurationValid = false;
+                    break;
+                }
+            } else{
+                configurationValid = false;
+                break;
+            }
+        }
+
+        return configurationValid;
     }
 
     /**
@@ -143,6 +227,12 @@ public class ValidationPane extends BasePane{
      */
     private void showErrorConfiguration(String errorMsg){
         // TODO
+        Alert error = new Alert(Alert.AlertType.ERROR);
+        error.setTitle("Invalid configuration or game process!");
+        error.setHeaderText("Due to following reason(s):");
+        error.setContentText(errorMsg);
+
+        error.show();
     }
 
     /**
@@ -153,6 +243,11 @@ public class ValidationPane extends BasePane{
      */
     private void showErrorMsg(){
         //TODO
+        Alert error = new Alert(Alert.AlertType.ERROR);
+        error.setTitle("Error!");
+        error.setHeaderText("You haven't loaded a record, Please load first.");
+
+        error.showAndWait();
     }
 
     /**
@@ -163,6 +258,11 @@ public class ValidationPane extends BasePane{
      */
     private void passValidationWindow(){
         //TODO
+        Alert confirm = new Alert(Alert.AlertType.CONFIRMATION);
+        confirm.setTitle("Confirm");
+        confirm.setHeaderText("Pass validation!");
+
+        confirm.showAndWait();
     }
 
     /**
@@ -172,6 +272,17 @@ public class ValidationPane extends BasePane{
      */
     private void returnToMainMenu(){
         // TODO
+        loadedConfiguration = null;
+        storedScores = null;
+        loadedGame = null;
+        loadedcentralPlace = null;
+        for(int i = 0; i < loadedMoveRecords.size(); i++)
+            loadedMoveRecords.remove(i);
+
+        isValid = new SimpleBooleanProperty(false);
+
+        gamePlayCanvas.getGraphicsContext2D().clearRect(0, 0, gamePlayCanvas.getWidth(), gamePlayCanvas.getHeight());
+        SceneManager.getInstance().showPane(MainMenuPane.class);
     }
 
 
@@ -186,7 +297,16 @@ public class ValidationPane extends BasePane{
     @Nullable
     private File getTargetLoadFile() {
         //TODO
-        return null;
+        FileChooser fileChooser = new FileChooser();
+
+        //Set extension filter for text files
+        FileChooser.ExtensionFilter extFilter = new FileChooser.ExtensionFilter("TXT files (*.txt)", "*.txt");
+        fileChooser.getExtensionFilters().add(extFilter);
+
+        //Show save file dialog
+        File file = fileChooser.showOpenDialog(Stage.getWindows().stream().filter(Window::isShowing).findFirst().orElse(null));
+
+        return file;
     }
 
 }
