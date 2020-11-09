@@ -3,13 +3,14 @@ package castle.comp3021.assignment.gui.views.panes;
 import castle.comp3021.assignment.gui.DurationTimer;
 import castle.comp3021.assignment.gui.FXJesonMor;
 import castle.comp3021.assignment.gui.ViewConfig;
+import castle.comp3021.assignment.gui.controllers.AudioManager;
 import castle.comp3021.assignment.gui.controllers.ResourceLoader;
 import castle.comp3021.assignment.gui.controllers.SceneManager;
 import castle.comp3021.assignment.gui.views.BigButton;
 import castle.comp3021.assignment.gui.views.BigVBox;
 import castle.comp3021.assignment.gui.views.GameplayInfoPane;
 import castle.comp3021.assignment.gui.views.SideMenuVBox;
-import castle.comp3021.assignment.piece.Knight;
+import castle.comp3021.assignment.piece.*;
 import castle.comp3021.assignment.player.ConsolePlayer;
 import castle.comp3021.assignment.player.RandomPlayer;
 import castle.comp3021.assignment.protocol.*;
@@ -18,6 +19,7 @@ import javafx.application.Platform;
 import javafx.beans.property.IntegerProperty;
 import javafx.beans.property.SimpleIntegerProperty;
 import javafx.beans.property.SimpleStringProperty;
+import javafx.concurrent.Task;
 import javafx.event.ActionEvent;
 import javafx.event.Event;
 import javafx.event.EventHandler;
@@ -34,6 +36,7 @@ import javafx.scene.text.Text;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.EventListener;
+import java.util.Scanner;
 import java.util.TimerTask;
 
 /**
@@ -108,10 +111,14 @@ public class GamePlayPane extends BasePane {
     Player winner;
     Player currentPlayer;
     Piece lastPiece;
+    Place humanPlayerSource;
+    Place humanPlayerDest;
     Move lastMove;
+    Move humanPlayerMove;
     Thread currentThread;
     boolean isStopped;
-    boolean scoreNeedUpdate;
+    boolean humanPlayerMoved;
+    boolean humanPlayerNeedMove;
 
     public GamePlayPane() {
         connectComponents();
@@ -162,6 +169,19 @@ public class GamePlayPane extends BasePane {
             onRestartButtonClick();
             startButton.setDisable(false);
             restartButton.setDisable(true);
+        });
+
+        gamePlayCanvas.setOnMousePressed(e->{
+            if(humanPlayerNeedMove && !humanPlayerMoved && currentPlayer instanceof ConsolePlayer)
+                onCanvasPressed(e);
+        });
+        gamePlayCanvas.setOnMouseDragged(e-> {
+            if(humanPlayerNeedMove && !humanPlayerMoved && currentPlayer instanceof ConsolePlayer)
+                onCanvasDragged(e);
+        });
+        gamePlayCanvas.setOnMouseReleased(e-> {
+            if(humanPlayerNeedMove && !humanPlayerMoved && currentPlayer instanceof ConsolePlayer)
+                onCanvasReleased(e);
         });
 
         returnButton.setOnMouseClicked(e->doQuitToMenuAction());
@@ -234,120 +254,87 @@ public class GamePlayPane extends BasePane {
         lastPiece = null;
         lastMove = null;
         isStopped = false;
+        humanPlayerMoved = true;
+        humanPlayerNeedMove = false;
 
-        scoreNeedUpdate = false;
-
-        this.fxJesonMor.addOnTickHandler(new Runnable() {
-            @Override
-            public void run() {
-                Platform.runLater(() -> {
-                    ticksElapsed.setValue(remainingTime);
-                    remainingTime--;
-                    if(remainingTime < 0) {
-                        isStopped = true;
-                        endGame();
-                        createWinPopup("");
-                    }
-                });
+        this.fxJesonMor.addOnTickHandler(() -> Platform.runLater(() -> {
+            ticksElapsed.setValue(remainingTime);
+            remainingTime--;
+            if(remainingTime < 0) {
+                isStopped = true;
+                endGame();
+                createWinPopup("");
             }
-        });
+        }));
 
-        currentThread = new Thread(new Runnable() {
-            public void run() {
-                while (!isStopped) {
-                    var player = configuration.getPlayers()[numMoves % configuration.getPlayers().length];
-                    // let player make next move
-                    currentPlayer = player;
-                    var availableMoves = fxJesonMor.getAvailableMoves(player);
+        currentThread = new Thread(() -> {
+            while (!isStopped) {
+                var player = configuration.getPlayers()[numMoves % configuration.getPlayers().length];
+                // let player make next move
+                currentPlayer = player;
+                var availableMoves = fxJesonMor.getAvailableMoves(player);
 
-                    // there shouldn't be no available moves, if no available moves, the player with lower score wins
-                    if (availableMoves.length <= 0) {
-                        if (configuration.getPlayers()[0].getScore() < configuration.getPlayers()[1].getScore())
-                            winner = configuration.getPlayers()[0];
-                        else if (configuration.getPlayers()[0].getScore() > configuration.getPlayers()[1].getScore())
-                            winner = configuration.getPlayers()[1];
-                        else
-                            winner = player;
-                    } else {
-                        fxJesonMor.startCountdown();
+                // there shouldn't be no available moves, if no available moves, the player with lower score wins
+                if (availableMoves.length <= 0) {
+                    if (configuration.getPlayers()[0].getScore() < configuration.getPlayers()[1].getScore())
+                        winner = configuration.getPlayers()[0];
+                    else if (configuration.getPlayers()[0].getScore() > configuration.getPlayers()[1].getScore())
+                        winner = configuration.getPlayers()[1];
+                    else
+                        winner = player;
+                } else {
+                    fxJesonMor.startCountdown();
 
-                        var move = player.nextMove(fxJesonMor, availableMoves);
-                        var movedPiece = fxJesonMor.getPiece(move.getSource());
+                    Move move;
+                    if(currentPlayer instanceof ConsolePlayer) {
+                        humanPlayerMoved = false;
+                        humanPlayerNeedMove = true;
+                        humanPlayerSource = null;
+                        humanPlayerDest = null;
                         try {
-                            if (!(currentPlayer instanceof ConsolePlayer))
-                                Thread.sleep(2500);
-                            else
-                                Thread.sleep(500);
+                            Thread.sleep(DurationTimer.getDefaultEachRound() * 1000);
+                        } catch (InterruptedException interruptedException) {
+                        }
+                    } else {
+                        move = player.nextMove(fxJesonMor, availableMoves);
+
+                        Piece movedPiece = fxJesonMor.getPiece(move.getSource());
+                        fxJesonMor.stopCountdown();
+                        lastPlayer = player;
+                        lastPiece = movedPiece;
+                        lastMove = move;
+
+                        try {
+                            Thread.sleep(1000);
                         } catch (InterruptedException e) {
-                            Platform.runLater(new Runnable() {
-                                @Override
-                                public void run() {
-                                    isStopped = true;
-                                    endGame();
-                                }
+                            Platform.runLater(() -> {
+                                isStopped = true;
+                                endGame();
                             });
                         }
 
-                        // check if there is a winner and if there is, return the winner.
-                        // if there is no winner yet, continue the loop with label "round"
-
-                                if(!isStopped) {
-                                    // make move
-                                    fxJesonMor.stopCountdown();
-
-                                    lastPlayer = player;
-                                    lastPiece = movedPiece;
-                                    lastMove = move;
-
-                                    fxJesonMor.movePiece(lastMove);
-                                    numMoves++;
-//                                    fxJesonMor.updateScore(lastPlayer, lastPiece, lastMove);
-                                    scoreNeedUpdate = true;
-                                    new Thread(new Runnable() {
-                                        @Override
-                                        public void run() {
-                                            Platform.runLater(()->{
-//                    while(!isStopped)
-                                                if(scoreNeedUpdate && lastMove != null && lastPiece != null && lastPlayer != null) {
-                                                    scoreNeedUpdate = false;
-                                                    fxJesonMor.updateScore(lastPlayer, lastPiece, lastMove);
-                                                    System.out.println("HAHAHAA");
-                                                }
-                                            });
-                                        }
-                                    }).start();
-                                    remainingTime = DurationTimer.getDefaultEachRound();
-                                    fxJesonMor.renderBoard(gamePlayCanvas);
-                                    updateHistoryField(move);
-                                    checkWinner();
-                                }
-
+                        fxJesonMor.movePiece(lastMove);
+                        AudioManager.getInstance().playSound(AudioManager.SoundRes.PLACE);
+                        numMoves++;
+                        checkWinner();
+                        //fxJesonMor.updateScore(lastPlayer, lastPiece, lastMove);
+                        remainingTime = DurationTimer.getDefaultEachRound();
+                        fxJesonMor.renderBoard(gamePlayCanvas);
+                        updateHistoryField(move);
+                        Thread.yield();
                     }
-                    if (winner != null) {
-                        isStopped = true;
-                        String winnerName = winner.getName();
-                        winner = null;
-                        endGame();
-                        createWinPopup(winnerName);
-                    }
+                }
+                if (winner != null) {
+                    isStopped = true;
+                    String winnerName = winner.getName();
+                    winner = null;
+                    endGame();
+                    createWinPopup(winnerName);
                 }
             }
         });
         currentThread.start();
 
-//        new Thread(new Runnable() {
-//            @Override
-//            public void run() {
-//                Platform.runLater(()->{
-////                    while(!isStopped)
-//                        if(scoreNeedUpdate && lastMove != null && lastPiece != null && lastPlayer != null) {
-//                            scoreNeedUpdate = false;
-//                            fxJesonMor.updateScore(lastPlayer, lastPiece, lastMove);
-//                            System.out.println("HAHAHAA");
-//                        }
-//                });
-//            }
-//        }).start();
     }
 
     /**
@@ -357,7 +344,7 @@ public class GamePlayPane extends BasePane {
     private void onRestartButtonClick(){
         //TODO
         isStopped = true;
-
+        currentThread.interrupt();
         endGame();
     }
 
@@ -372,6 +359,11 @@ public class GamePlayPane extends BasePane {
      */
     private void onCanvasPressed(MouseEvent event){
         // TODO
+        if(currentPlayer instanceof ConsolePlayer && humanPlayerNeedMove && !humanPlayerMoved) {
+            AudioManager.getInstance().playSound(AudioManager.SoundRes.CLICK);
+            Renderer.drawRectangle(gamePlayCanvas.getGraphicsContext2D(), event.getX(), event.getY());
+            humanPlayerSource = new Place((int) event.getX() / ViewConfig.PIECE_SIZE, (int) event.getY() / ViewConfig.PIECE_SIZE);
+        }
     }
 
     /**
@@ -383,6 +375,8 @@ public class GamePlayPane extends BasePane {
      */
     private void onCanvasDragged(MouseEvent event){
         //TODO
+        if(currentPlayer instanceof ConsolePlayer && humanPlayerNeedMove && !humanPlayerMoved)
+            Renderer.drawOval(gamePlayCanvas.getGraphicsContext2D(), event.getX(), event.getY());
     }
 
     /**
@@ -395,8 +389,73 @@ public class GamePlayPane extends BasePane {
      */
     private void onCanvasReleased(MouseEvent event){
         // TODO
+        if(currentPlayer instanceof ConsolePlayer && humanPlayerNeedMove && !humanPlayerMoved) {
+            int x = toBoardCoordinate(event.getX());
+            int y = toBoardCoordinate(event.getY());
+            humanPlayerDest = new Place((int) event.getX() / ViewConfig.PIECE_SIZE, (int) event.getY() / ViewConfig.PIECE_SIZE);
+            humanPlayerMove = new Move(humanPlayerSource, humanPlayerDest);
+            fxJesonMor.renderBoard(gamePlayCanvas);
+            var error = validateMove(fxJesonMor, humanPlayerMove);
+            if (error != null) {
+                humanPlayerSource = null;
+                humanPlayerDest = null;
+                humanPlayerMove = null;
+                Platform.runLater(()->{
+                    showInvalidMoveMsg(error);
+                });
+                humanPlayerMoved = false;
+                humanPlayerNeedMove = true;
+            } else{
+                humanPlayerMoved = true;
+                humanPlayerNeedMove = false;
+                Piece movedPiece = fxJesonMor.getPiece(humanPlayerMove.getSource());
+                fxJesonMor.stopCountdown();
+                lastPlayer = currentPlayer;
+                lastPiece = movedPiece;
+                lastMove = humanPlayerMove;
+
+                fxJesonMor.movePiece(lastMove);
+                AudioManager.getInstance().playSound(AudioManager.SoundRes.PLACE);
+                numMoves++;
+                checkWinner();
+                //fxJesonMor.updateScore(lastPlayer, lastPiece, lastMove);
+                remainingTime = DurationTimer.getDefaultEachRound();
+                fxJesonMor.renderBoard(gamePlayCanvas);
+                updateHistoryField(humanPlayerMove);
+                currentThread.interrupt();
+
+                if (winner != null) {
+                    isStopped = true;
+                    String winnerName = winner.getName();
+                    winner = null;
+                    endGame();
+                    createWinPopup(winnerName);
+                }
+            }
+        }
     }
 
+    public String validateMove(Game game, Move move) {
+        if(!game.getPiece(move.getSource().x(), move.getSource().y()).getPlayer().getName().equals(currentPlayer.getName()))
+            return "The piece you moved does not belong to you!";
+        var rules = new Rule[]{
+                new OutOfBoundaryRule(),
+                new OccupiedRule(),
+                new VacantRule(),
+                new NilMoveRule(),
+                new FirstNMovesProtectionRule(game.getConfiguration().getNumMovesProtection()),
+                new ArcherMoveRule(),
+                new KnightMoveRule(),
+                new KnightBlockRule(),
+        };
+        for (var rule :
+                rules) {
+            if (!rule.validate(game, move)) {
+                return rule.getDescription();
+            }
+        }
+        return null;
+    }
     /**
      * Creates a popup which tells the winner
      */
@@ -411,10 +470,12 @@ public class GamePlayPane extends BasePane {
         if(winnerName != "") {
             winAlert.setTitle("Congratulations!");
             winAlert.setContentText(winnerName + " wins!");
+            AudioManager.getInstance().playSound(AudioManager.SoundRes.WIN);
         }
         else{
             winAlert.setTitle("Sorry! Time's out!");
             winAlert.setContentText(currentPlayer.getName() + " Lose!");
+            AudioManager.getInstance().playSound(AudioManager.SoundRes.LOSE);
         }
 
         winAlert.getDialogPane().getButtonTypes().removeAll();
@@ -504,7 +565,6 @@ public class GamePlayPane extends BasePane {
      */
     private void doQuitToMenuAction() {
         // TODO
-
         Alert returnAlert = new Alert(Alert.AlertType.CONFIRMATION);
         returnAlert.setTitle("Confirm");
         returnAlert.setHeaderText("Return to menu?");
@@ -549,7 +609,7 @@ public class GamePlayPane extends BasePane {
      */
     private int toBoardCoordinate(double x){
         // TODO
-        return 0;
+        return (int) (x / ViewConfig.PIECE_SIZE);
     }
 
     /**
@@ -566,15 +626,16 @@ public class GamePlayPane extends BasePane {
         numMoves = 0;
         lastPlayer = null;
         winner = null;
-        currentPlayer = null;
         lastPiece = null;
         lastMove = null;
         isStopped = true;
 
-        disableCanvas();
         Configuration newConfiguration = new Configuration(globalConfiguration.getSize(), globalConfiguration.getPlayers(), globalConfiguration.getNumMovesProtection());
         newConfiguration.setAllInitialPieces();
         fxJesonMor = new FXJesonMor(newConfiguration);
+        currentPlayer = fxJesonMor.getCurrentPlayer();
+        humanPlayerMoved = true;
+        humanPlayerNeedMove = false;
 
         gamePlayCanvas.getGraphicsContext2D().clearRect(0, 0, gamePlayCanvas.getWidth(), gamePlayCanvas.getHeight());
 
@@ -598,8 +659,8 @@ public class GamePlayPane extends BasePane {
         startButton.setDisable(false);
         restartButton.setDisable(true);
 
-        fxJesonMor.updateScore(currentConfiguration.getPlayers()[0], null, new Move(0, 0, 0, 0));
-        fxJesonMor.updateScore(currentConfiguration.getPlayers()[1], null, new Move(0, 0, 0, 0));
+//        fxJesonMor.updateScore(currentConfiguration.getPlayers()[0], null, new Move(0, 0, 0, 0));
+//        fxJesonMor.updateScore(currentConfiguration.getPlayers()[1], null, new Move(0, 0, 0, 0));
 
         fxJesonMor.renderBoard(gamePlayCanvas);
     }
