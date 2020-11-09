@@ -56,7 +56,7 @@ public class Deserializer {
         return lineRead;
     }
 
-    public void parseGame() {
+    public void parseGame() throws InvalidGameException, InvalidConfigurationError{
         try (var reader = new BufferedReader(new FileReader(path.toFile()))) {
             String line;
 
@@ -128,9 +128,11 @@ public class Deserializer {
              * if fail, throw InvalidConfigurationError exception
              * if success, assign to {@link Deserializer#configuration}
              */
-            configuration = new Configuration(size, players,numMovesProtection);
-            if (configuration == null)
-                throw new InvalidConfigurationError("Unexpected EOF when create configuration");
+            try {
+                configuration = new Configuration(size, players, numMovesProtection);
+            } catch (InvalidConfigurationError e) {
+                throw new InvalidConfigurationError(e.getMessage());
+            }
 
 
             // TODO
