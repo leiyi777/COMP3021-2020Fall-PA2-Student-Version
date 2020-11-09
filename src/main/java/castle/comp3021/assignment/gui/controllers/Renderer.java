@@ -6,6 +6,8 @@ import castle.comp3021.assignment.protocol.Place;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.image.Image;
+import javafx.scene.paint.Color;
+import javafx.scene.shape.Rectangle;
 import org.jetbrains.annotations.NotNull;
 
 
@@ -52,6 +54,9 @@ public class Renderer {
      */
     public static void drawOval(@NotNull GraphicsContext gc, double x, double y) {
         // TODO
+        Color selectedColor = Color.rgb(255,255,220);
+        gc.setFill(selectedColor);
+        gc.fillOval(x, y, 12, 12);
     }
 
     /**
@@ -63,6 +68,11 @@ public class Renderer {
      */
     public static void drawRectangle(@NotNull GraphicsContext gc, double x, double y){
         //TODO
+        Color selectedColor = Color.rgb(255,255,220);
+        int boardX = (int) x / ViewConfig.PIECE_SIZE;
+        int boardY = (int) y / ViewConfig.PIECE_SIZE;
+        gc.setFill(selectedColor);
+        gc.fillRect(boardX * ViewConfig.PIECE_SIZE, boardY * ViewConfig.PIECE_SIZE, ViewConfig.PIECE_SIZE, ViewConfig.PIECE_SIZE);
     }
 
     /**
