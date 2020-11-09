@@ -70,7 +70,7 @@ public class DurationTimer {
                     onTickCallbacks.get(0).run();
                 });
             }
-        }, 1000, 1000);
+        }, 0, 1000);
     }
 
     /**
