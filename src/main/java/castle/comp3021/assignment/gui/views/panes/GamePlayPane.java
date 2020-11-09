@@ -15,6 +15,7 @@ import castle.comp3021.assignment.player.ConsolePlayer;
 import castle.comp3021.assignment.player.RandomPlayer;
 import castle.comp3021.assignment.protocol.*;
 import castle.comp3021.assignment.gui.controllers.Renderer;
+import castle.comp3021.assignment.protocol.io.Serializer;
 import javafx.application.Platform;
 import javafx.beans.property.IntegerProperty;
 import javafx.beans.property.SimpleIntegerProperty;
@@ -35,6 +36,7 @@ import javafx.scene.layout.VBox;
 import javafx.scene.text.Text;
 import org.jetbrains.annotations.NotNull;
 
+import java.io.IOException;
 import java.util.EventListener;
 import java.util.Scanner;
 import java.util.TimerTask;
@@ -262,8 +264,8 @@ public class GamePlayPane extends BasePane {
             remainingTime--;
             if(remainingTime < 0) {
                 isStopped = true;
-                endGame();
                 createWinPopup("");
+                endGame();
             }
         }));
 
@@ -317,7 +319,7 @@ public class GamePlayPane extends BasePane {
                         AudioManager.getInstance().playSound(AudioManager.SoundRes.PLACE);
                         numMoves++;
                         checkWinner();
-                        //fxJesonMor.updateScore(lastPlayer, lastPiece, lastMove);
+                        fxJesonMor.updateScore(lastPlayer, lastPiece, lastMove);
                         remainingTime = DurationTimer.getDefaultEachRound();
                         fxJesonMor.renderBoard(gamePlayCanvas);
                         updateHistoryField(move);
@@ -328,8 +330,8 @@ public class GamePlayPane extends BasePane {
                     isStopped = true;
                     String winnerName = winner.getName();
                     winner = null;
-                    endGame();
                     createWinPopup(winnerName);
+                    endGame();
                 }
             }
         });
@@ -418,7 +420,7 @@ public class GamePlayPane extends BasePane {
                 AudioManager.getInstance().playSound(AudioManager.SoundRes.PLACE);
                 numMoves++;
                 checkWinner();
-                //fxJesonMor.updateScore(lastPlayer, lastPiece, lastMove);
+                fxJesonMor.updateScore(lastPlayer, lastPiece, lastMove);
                 remainingTime = DurationTimer.getDefaultEachRound();
                 fxJesonMor.renderBoard(gamePlayCanvas);
                 updateHistoryField(humanPlayerMove);
@@ -428,8 +430,8 @@ public class GamePlayPane extends BasePane {
                     isStopped = true;
                     String winnerName = winner.getName();
                     winner = null;
-                    endGame();
                     createWinPopup(winnerName);
+                    endGame();
                 }
             }
         }
@@ -489,7 +491,11 @@ public class GamePlayPane extends BasePane {
         if (result.equals(startNewGame))
             onRestartButtonClick();
         else if(result.equals(exportMoveRecords)){
-            //
+            try {
+                Serializer.getInstance().saveToFile(fxJesonMor);
+            } catch (IOException e) {
+//                e.printStackTrace();
+            }
         }
         else
             doQuitToMenuAction();
