@@ -264,16 +264,16 @@ public class Configuration implements Cloneable {
     @Override
     public String toString() {
         // TODO
-        return ("#Game setting" + "\n" + "\n" +
+        return ("#Game setting" + "\n" +
                 "size:" + getSize() + "\n"+
                 "numMovesProtection:" + getNumMovesProtection() + "\n" +
                 "centralPlace:(" + getCentralPlace().x() + "," + getCentralPlace().y() + ")\n" +
                 "numPlayers:" + getPlayers().length + "\n"+ "\n" +
                 "#Player info" + "\n" +
                 "#player1:" + "\n" +
-                "name:" + getPlayers()[0].getName() + ", score:" + getPlayers()[0].getScore() + "\n" +
+                "name:" + getPlayers()[0].getName() + "; score:" + getPlayers()[0].getScore() + "\n" +
                 "#player2:" + "\n" +
-                "name:" + getPlayers()[1].getName() + ", score:" + getPlayers()[1].getScore() + "\n" + "\n"
+                "name:" + getPlayers()[1].getName() + "; score:" + getPlayers()[1].getScore() + "\n" + "\n"
                 );
     }
 }
