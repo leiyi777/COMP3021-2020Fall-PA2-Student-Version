@@ -1,9 +1,13 @@
 package castle.comp3021.assignment.gui.views.panes;
 
 import castle.comp3021.assignment.gui.FXJesonMor;
+import castle.comp3021.assignment.gui.ViewConfig;
+import castle.comp3021.assignment.gui.controllers.AudioManager;
 import castle.comp3021.assignment.gui.controllers.SceneManager;
+import castle.comp3021.assignment.player.ConsolePlayer;
 import castle.comp3021.assignment.protocol.*;
 import castle.comp3021.assignment.protocol.io.Deserializer;
+import javafx.application.Platform;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.concurrent.Task;
@@ -174,6 +178,34 @@ public class ValidationPane extends BasePane{
      */
     private void onClickReplayButton(){
         //TODO
+        Player player1 = new ConsolePlayer(loadedConfiguration.getPlayers()[0].getName());
+        Player player2 = new ConsolePlayer(loadedConfiguration.getPlayers()[1].getName());
+        Player[] players = {player1, player2};
+        loadedConfiguration = new Configuration(loadedConfiguration.getSize(), players, loadedConfiguration.getNumMovesProtection());
+        loadedConfiguration.setAllInitialPieces();
+        loadedGame = new FXJesonMor(loadedConfiguration);
+
+        gamePlayCanvas.setWidth(loadedConfiguration.getSize() * ViewConfig.PIECE_SIZE);
+        gamePlayCanvas.setHeight(loadedConfiguration.getSize() * ViewConfig.PIECE_SIZE);
+//        loadedGame.refreshOutput();
+        new Thread(()->{
+            loadedGame.renderBoard(gamePlayCanvas);
+            for(int i = 0; i < loadedMoveRecords.size(); i++){
+                Player currentPlayer = loadedMoveRecords.get(i).getPlayer();
+                Move currentMove = loadedMoveRecords.get(i).getMove();
+                Piece currentPiece = loadedGame.getPiece(currentMove.getSource());
+
+                loadedGame.movePiece(currentMove);
+                loadedGame.updateScore(currentPlayer, currentPiece, currentMove);
+                AudioManager.getInstance().playSound(AudioManager.SoundRes.PLACE);
+                loadedGame.renderBoard(gamePlayCanvas);
+                try {
+                    Thread.sleep(1000);
+                } catch (InterruptedException interruptedException) {
+                    interruptedException.printStackTrace();
+                }
+                }
+        }).start();
     }
 
     /**
@@ -213,7 +245,7 @@ public class ValidationPane extends BasePane{
                 break;
             }
         }
-
+        isValid.setValue(true);
         return configurationValid;
     }
 
