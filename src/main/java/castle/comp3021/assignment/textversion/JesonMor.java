@@ -16,7 +16,7 @@ public class JesonMor extends Game {
         super(configuration);
     }
 
-    protected ArrayList<MoveRecord> moveRecords = new ArrayList<>();
+    private ArrayList<MoveRecord> moveRecords = new ArrayList<>();
 
     /**
      * Start the game
