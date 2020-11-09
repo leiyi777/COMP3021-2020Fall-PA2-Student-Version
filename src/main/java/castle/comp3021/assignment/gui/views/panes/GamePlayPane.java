@@ -3,22 +3,38 @@ package castle.comp3021.assignment.gui.views.panes;
 import castle.comp3021.assignment.gui.DurationTimer;
 import castle.comp3021.assignment.gui.FXJesonMor;
 import castle.comp3021.assignment.gui.ViewConfig;
+import castle.comp3021.assignment.gui.controllers.ResourceLoader;
+import castle.comp3021.assignment.gui.controllers.SceneManager;
 import castle.comp3021.assignment.gui.views.BigButton;
 import castle.comp3021.assignment.gui.views.BigVBox;
 import castle.comp3021.assignment.gui.views.GameplayInfoPane;
 import castle.comp3021.assignment.gui.views.SideMenuVBox;
+import castle.comp3021.assignment.piece.Knight;
+import castle.comp3021.assignment.player.ConsolePlayer;
+import castle.comp3021.assignment.player.RandomPlayer;
 import castle.comp3021.assignment.protocol.*;
 import castle.comp3021.assignment.gui.controllers.Renderer;
+import javafx.application.Platform;
 import javafx.beans.property.IntegerProperty;
 import javafx.beans.property.SimpleIntegerProperty;
+import javafx.beans.property.SimpleStringProperty;
+import javafx.event.ActionEvent;
+import javafx.event.Event;
+import javafx.event.EventHandler;
 import javafx.geometry.Pos;
+import javafx.scene.Scene;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.control.*;
+import javafx.scene.image.Image;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.HBox;
+import javafx.scene.layout.VBox;
 import javafx.scene.text.Text;
 import org.jetbrains.annotations.NotNull;
+
+import java.util.EventListener;
+import java.util.TimerTask;
 
 /**
  * This class implements the main playing function of Jeson Mor
@@ -86,7 +102,16 @@ public class GamePlayPane extends BasePane {
      */
     // TODO
     FXJesonMor fxJesonMor;
-
+    int remainingTime;
+    int numMoves;
+    Player lastPlayer;
+    Player winner;
+    Player currentPlayer;
+    Piece lastPiece;
+    Move lastMove;
+    Thread currentThread;
+    boolean isStopped;
+    boolean scoreNeedUpdate;
 
     public GamePlayPane() {
         connectComponents();
@@ -104,7 +129,7 @@ public class GamePlayPane extends BasePane {
         topBar.setAlignment(Pos.CENTER);
         leftContainer.getChildren().addAll(parameterText, historyLabel,
                 scrollPane, startButton, restartButton, returnButton);
-//        centerContainer.getChildren().addAll(gamePlayCanvas, infoPane);
+        centerContainer.getChildren().addAll(gamePlayCanvas);
         this.setTop(topBar);
         this.setLeft(leftContainer);
         this.setCenter(centerContainer);
@@ -127,6 +152,19 @@ public class GamePlayPane extends BasePane {
     @Override
     void setCallbacks() {
         //TODO
+        startButton.setOnMouseClicked(e->{
+            startButton.setDisable(true);
+            restartButton.setDisable(false);
+            startGame();
+        });
+
+        restartButton.setOnMouseClicked(e->{
+            onRestartButtonClick();
+            startButton.setDisable(false);
+            restartButton.setDisable(true);
+        });
+
+        returnButton.setOnMouseClicked(e->doQuitToMenuAction());
     }
 
     /**
@@ -142,14 +180,19 @@ public class GamePlayPane extends BasePane {
     void initializeGame(@NotNull FXJesonMor fxJesonMor) {
         //TODO
         this.fxJesonMor = fxJesonMor;
-        startButton.setDisable(false);
-        restartButton.setDisable(true);
-        parameterText.setText("Parameters:" + "\n" + "\n" +
-                "Size of board: " + globalConfiguration.getSize() + "\n"+
-                "Num of protection moves: " + globalConfiguration.getNumMovesProtection() + "\n" +
-                "Player " + globalConfiguration.getPlayers()[0].getName() + (globalConfiguration.isFirstPlayerHuman() ? "(human)" : "(computer)") + "\n" +
-                "Player " + globalConfiguration.getPlayers()[1].getName() + (globalConfiguration.isSecondPlayerHuman() ? "(human)" : "(computer)") + "\n"
-        );
+        remainingTime = DurationTimer.getDefaultEachRound();
+        isStopped = true;
+        ticksElapsed.setValue(remainingTime);
+
+        if(infoPane != null)
+            centerContainer.getChildren().remove(infoPane);
+        infoPane = new GameplayInfoPane(fxJesonMor.getPlayer1Score(), fxJesonMor.getPlayer2Score(), fxJesonMor.getCurPlayerName(), ticksElapsed);
+        centerContainer.getChildren().add(infoPane);
+
+        gamePlayCanvas.setWidth((ViewConfig.PIECE_SIZE * fxJesonMor.getConfiguration().getSize()));
+        gamePlayCanvas.setHeight(ViewConfig.PIECE_SIZE * fxJesonMor.getConfiguration().getSize());
+        endGame();
+        enableCanvas();
     }
 
     /**
@@ -183,6 +226,128 @@ public class GamePlayPane extends BasePane {
      */
     public void startGame() {
         //TODO
+        Configuration configuration = fxJesonMor.getConfiguration();
+        numMoves = 0;
+        lastPlayer = null;
+        winner = null;
+        currentPlayer = fxJesonMor.getCurrentPlayer();
+        lastPiece = null;
+        lastMove = null;
+        isStopped = false;
+
+        scoreNeedUpdate = false;
+
+        this.fxJesonMor.addOnTickHandler(new Runnable() {
+            @Override
+            public void run() {
+                Platform.runLater(() -> {
+                    ticksElapsed.setValue(remainingTime);
+                    remainingTime--;
+                    if(remainingTime < 0) {
+                        isStopped = true;
+                        endGame();
+                        createWinPopup("");
+                    }
+                });
+            }
+        });
+
+        currentThread = new Thread(new Runnable() {
+            public void run() {
+                while (!isStopped) {
+                    var player = configuration.getPlayers()[numMoves % configuration.getPlayers().length];
+                    // let player make next move
+                    currentPlayer = player;
+                    var availableMoves = fxJesonMor.getAvailableMoves(player);
+
+                    // there shouldn't be no available moves, if no available moves, the player with lower score wins
+                    if (availableMoves.length <= 0) {
+                        if (configuration.getPlayers()[0].getScore() < configuration.getPlayers()[1].getScore())
+                            winner = configuration.getPlayers()[0];
+                        else if (configuration.getPlayers()[0].getScore() > configuration.getPlayers()[1].getScore())
+                            winner = configuration.getPlayers()[1];
+                        else
+                            winner = player;
+                    } else {
+                        fxJesonMor.startCountdown();
+
+                        var move = player.nextMove(fxJesonMor, availableMoves);
+                        var movedPiece = fxJesonMor.getPiece(move.getSource());
+                        try {
+                            if (!(currentPlayer instanceof ConsolePlayer))
+                                Thread.sleep(2500);
+                            else
+                                Thread.sleep(500);
+                        } catch (InterruptedException e) {
+                            Platform.runLater(new Runnable() {
+                                @Override
+                                public void run() {
+                                    isStopped = true;
+                                    endGame();
+                                }
+                            });
+                        }
+
+                        // check if there is a winner and if there is, return the winner.
+                        // if there is no winner yet, continue the loop with label "round"
+
+                                if(!isStopped) {
+                                    // make move
+                                    fxJesonMor.stopCountdown();
+
+                                    lastPlayer = player;
+                                    lastPiece = movedPiece;
+                                    lastMove = move;
+
+                                    fxJesonMor.movePiece(lastMove);
+                                    numMoves++;
+//                                    fxJesonMor.updateScore(lastPlayer, lastPiece, lastMove);
+                                    scoreNeedUpdate = true;
+                                    new Thread(new Runnable() {
+                                        @Override
+                                        public void run() {
+                                            Platform.runLater(()->{
+//                    while(!isStopped)
+                                                if(scoreNeedUpdate && lastMove != null && lastPiece != null && lastPlayer != null) {
+                                                    scoreNeedUpdate = false;
+                                                    fxJesonMor.updateScore(lastPlayer, lastPiece, lastMove);
+                                                    System.out.println("HAHAHAA");
+                                                }
+                                            });
+                                        }
+                                    }).start();
+                                    remainingTime = DurationTimer.getDefaultEachRound();
+                                    fxJesonMor.renderBoard(gamePlayCanvas);
+                                    updateHistoryField(move);
+                                    checkWinner();
+                                }
+
+                    }
+                    if (winner != null) {
+                        isStopped = true;
+                        String winnerName = winner.getName();
+                        winner = null;
+                        endGame();
+                        createWinPopup(winnerName);
+                    }
+                }
+            }
+        });
+        currentThread.start();
+
+//        new Thread(new Runnable() {
+//            @Override
+//            public void run() {
+//                Platform.runLater(()->{
+////                    while(!isStopped)
+//                        if(scoreNeedUpdate && lastMove != null && lastPiece != null && lastPlayer != null) {
+//                            scoreNeedUpdate = false;
+//                            fxJesonMor.updateScore(lastPlayer, lastPiece, lastMove);
+//                            System.out.println("HAHAHAA");
+//                        }
+//                });
+//            }
+//        }).start();
     }
 
     /**
@@ -191,6 +356,9 @@ public class GamePlayPane extends BasePane {
      */
     private void onRestartButtonClick(){
         //TODO
+        isStopped = true;
+
+        endGame();
     }
 
     /**
@@ -234,6 +402,37 @@ public class GamePlayPane extends BasePane {
      */
     private void createWinPopup(String winnerName){
         //TODO
+        Alert winAlert = new Alert(Alert.AlertType.CONFIRMATION);
+
+        ButtonType startNewGame = new ButtonType("Start New game");
+        ButtonType exportMoveRecords = new ButtonType("Export Move Records");
+        ButtonType returnToMainMenu = new ButtonType("Return to Main Menu");
+
+        if(winnerName != "") {
+            winAlert.setTitle("Congratulations!");
+            winAlert.setContentText(winnerName + " wins!");
+        }
+        else{
+            winAlert.setTitle("Sorry! Time's out!");
+            winAlert.setContentText(currentPlayer.getName() + " Lose!");
+        }
+
+        winAlert.getDialogPane().getButtonTypes().removeAll();
+        winAlert.getButtonTypes().setAll(startNewGame, exportMoveRecords, returnToMainMenu);
+        winAlert.setOnCloseRequest(e->{});
+
+        winAlert.showAndWait();
+
+        ButtonType result = winAlert.getResult();
+
+        if (result.equals(startNewGame))
+            onRestartButtonClick();
+        else if(result.equals(exportMoveRecords)){
+            //
+        }
+        else
+            doQuitToMenuAction();
+
     }
 
 
@@ -246,6 +445,38 @@ public class GamePlayPane extends BasePane {
      */
     private void checkWinner(){
         //TODO
+        winner = null;
+
+        // no winner within numMovesProtection moves
+        if (numMoves <= fxJesonMor.getConfiguration().getNumMovesProtection()) {
+            return;
+        }
+
+        // first way to win: a piece leaves the central square, the piece should not be an Archer
+        if ((lastPiece instanceof Knight) && lastMove.getSource().equals(fxJesonMor.getConfiguration().getCentralPlace())
+                && !lastMove.getDestination().equals(fxJesonMor.getConfiguration().getCentralPlace())) {
+            winner = lastPlayer;
+        } else {
+            // second way to win: one player captures all the pieces of other players
+            Player remainingPlayer = null;
+            for (int i = 0; i < fxJesonMor.getConfiguration().getSize(); i++) {
+                for (int j = 0; j < fxJesonMor.getConfiguration().getSize(); j++) {
+                    var piece = fxJesonMor.getPiece(i, j);
+                    if (piece == null) {
+                        continue;
+                    }
+                    if (remainingPlayer == null) {
+                        remainingPlayer = piece.getPlayer();
+                    } else if (remainingPlayer != piece.getPlayer()) {
+                        // there are still two players having pieces on board
+                        return;
+                    }
+                }
+            }
+            // if the previous for loop terminates, then there must be 1 player on board (it cannot be null).
+            // then winner appears
+            winner = remainingPlayer;
+        }
     }
 
     /**
@@ -254,6 +485,11 @@ public class GamePlayPane extends BasePane {
      */
     private void showInvalidMoveMsg(String errorMsg){
         //TODO
+        Alert invalidMoveAlert = new Alert(Alert.AlertType.ERROR);
+        invalidMoveAlert.setTitle("Invalid Move");
+        invalidMoveAlert.setHeaderText("Your movement is invalid due to following reason(s):");
+        invalidMoveAlert.setContentText(errorMsg);
+        invalidMoveAlert.show();
     }
 
     /**
@@ -268,6 +504,16 @@ public class GamePlayPane extends BasePane {
      */
     private void doQuitToMenuAction() {
         // TODO
+
+        Alert returnAlert = new Alert(Alert.AlertType.CONFIRMATION);
+        returnAlert.setTitle("Confirm");
+        returnAlert.setHeaderText("Return to menu?");
+        returnAlert.setContentText("Game progress will be lost");
+        returnAlert.showAndWait();
+        if(returnAlert.getResult().equals(returnAlert.getButtonTypes().get(0))) {
+            isStopped = true;
+            doQuitToMenu();
+        }
     }
 
     /**
@@ -276,6 +522,12 @@ public class GamePlayPane extends BasePane {
      */
     private void updateHistoryField(Move move){
         //TODO
+        String prevText = historyFiled.getText();
+        String newText = prevText +
+                "[" + move.getSource().x() + ", " + move.getSource().y() + "]" +
+                " -> " +
+                "[" + move.getDestination().x() + ", " + move.getDestination().y() + "]" + "\n";
+        historyFiled.setText(newText);
     }
 
     /**
@@ -284,6 +536,8 @@ public class GamePlayPane extends BasePane {
      */
     private void doQuitToMenu() {
         // TODO
+        endGame();
+        SceneManager.getInstance().showPane(MainMenuPane.class);
     }
 
     /**
@@ -308,5 +562,45 @@ public class GamePlayPane extends BasePane {
      */
     private void endGame() {
         //TODO
+        fxJesonMor.stopCountdown();
+        numMoves = 0;
+        lastPlayer = null;
+        winner = null;
+        currentPlayer = null;
+        lastPiece = null;
+        lastMove = null;
+        isStopped = true;
+
+        disableCanvas();
+        Configuration newConfiguration = new Configuration(globalConfiguration.getSize(), globalConfiguration.getPlayers(), globalConfiguration.getNumMovesProtection());
+        newConfiguration.setAllInitialPieces();
+        fxJesonMor = new FXJesonMor(newConfiguration);
+
+        gamePlayCanvas.getGraphicsContext2D().clearRect(0, 0, gamePlayCanvas.getWidth(), gamePlayCanvas.getHeight());
+
+        Configuration currentConfiguration = fxJesonMor.getConfiguration();
+        currentConfiguration.getPlayers()[0].setScore(0);
+        currentConfiguration.getPlayers()[1].setScore(0);
+
+        remainingTime = DurationTimer.getDefaultEachRound();
+        Platform.runLater(()->{
+            ticksElapsed.setValue(remainingTime);
+        });
+
+        parameterText.setText("Parameters:" + "\n" + "\n" +
+                "Size of board: " + currentConfiguration.getSize() + "\n"+
+                "Num of protection moves: " + currentConfiguration.getNumMovesProtection() + "\n" +
+                "Player " + currentConfiguration.getPlayers()[0].getName() + (currentConfiguration.isFirstPlayerHuman() ? "(human)" : "(computer)") + "\n" +
+                "Player " + currentConfiguration.getPlayers()[1].getName() + (currentConfiguration.isSecondPlayerHuman() ? "(human)" : "(computer)") + "\n"
+        );
+        historyFiled.setText("");
+
+        startButton.setDisable(false);
+        restartButton.setDisable(true);
+
+        fxJesonMor.updateScore(currentConfiguration.getPlayers()[0], null, new Move(0, 0, 0, 0));
+        fxJesonMor.updateScore(currentConfiguration.getPlayers()[1], null, new Move(0, 0, 0, 0));
+
+        fxJesonMor.renderBoard(gamePlayCanvas);
     }
 }
