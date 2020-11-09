@@ -105,5 +105,7 @@ public class FXJesonMor extends JesonMor {
             scorePlayer2Property.setValue(player.getScore());
 
         currentPlayerNameProperty.setValue(nextPlayerName);
+        currentPlayer = player.equals(getConfiguration().getPlayers()[0]) ? getConfiguration().getPlayers()[1] : getConfiguration().getPlayers()[0];
+        numMoves++;
     }
 }
