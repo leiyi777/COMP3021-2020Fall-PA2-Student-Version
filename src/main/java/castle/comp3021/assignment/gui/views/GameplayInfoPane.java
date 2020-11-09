@@ -81,7 +81,15 @@ public class GameplayInfoPane extends BigVBox {
         // TODO
         score1Label.textProperty().bindBidirectional(score1Property, new NumberStringConverter("Score of player 1: "));
         score2Label.textProperty().bindBidirectional(score2Property, new NumberStringConverter("Score of player 2: "));
-        timerLabel.textProperty().bindBidirectional(ticksElapsed, new NumberStringConverter("Time: "));
+
+        timerLabel.textProperty().bind(Bindings.createStringBinding(() -> {
+            if(ticksElapsed.getValue() == null) {
+                return "";
+            }else {
+                return "Time: " + formatTime(ticksElapsed.getValue());
+            }
+        }, ticksElapsed));
+
         curPlayerLabel.textProperty().bind(Bindings.concat("Current player: ").concat(curPlayer));
     }
 }
