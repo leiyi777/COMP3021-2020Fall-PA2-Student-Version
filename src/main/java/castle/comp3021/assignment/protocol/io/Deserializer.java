@@ -65,7 +65,6 @@ public class Deserializer {
             if (line != null) {
                 // TODO: get size here
                 size = Integer.parseInt(line.substring("size:".length()));
-                System.out.println(size);
             } else {
                 throw new InvalidGameException("Unexpected EOF when parsing number of board size");
             }
@@ -186,7 +185,7 @@ public class Deserializer {
      */
     private Move parseMove(String moveString) {
         // TODO
-        //move:(2,0)->(3,2)
+        //move:2,0)   (3,2
         String subMoveString = moveString.substring("move:(".length(), moveString.length() - 1);
         String[] sourceAndDest = subMoveString.split("->");
         String[] source = sourceAndDest[0].split(",");
@@ -194,7 +193,7 @@ public class Deserializer {
 
         int sourceX = Integer.parseInt(source[0].substring(0,1));
         int sourceY = Integer.parseInt(source[1].substring(0,1));
-        int destX = Integer.parseInt(dest[0].substring(0,1));
+        int destX = Integer.parseInt(dest[0].substring(1,2));
         int destY = Integer.parseInt(dest[1].substring(0,1));
 
         return new Move(sourceX, sourceY, destX, destY);
