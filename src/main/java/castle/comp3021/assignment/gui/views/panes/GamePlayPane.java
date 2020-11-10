@@ -206,10 +206,10 @@ public class GamePlayPane extends BasePane {
         isStopped = true;
         ticksElapsed.setValue(remainingTime);
 
-        if(infoPane != null)
-            centerContainer.getChildren().remove(infoPane);
-        infoPane = new GameplayInfoPane(fxJesonMor.getPlayer1Score(), fxJesonMor.getPlayer2Score(), fxJesonMor.getCurPlayerName(), ticksElapsed);
-        centerContainer.getChildren().add(infoPane);
+//        if(infoPane != null)
+//            centerContainer.getChildren().remove(infoPane);
+//        infoPane = new GameplayInfoPane(fxJesonMor.getPlayer1Score(), fxJesonMor.getPlayer2Score(), fxJesonMor.getCurPlayerName(), ticksElapsed);
+//        centerContainer.getChildren().add(infoPane);
 
         gamePlayCanvas.setWidth((ViewConfig.PIECE_SIZE * fxJesonMor.getConfiguration().getSize()));
         gamePlayCanvas.setHeight(ViewConfig.PIECE_SIZE * fxJesonMor.getConfiguration().getSize());
@@ -289,6 +289,7 @@ public class GamePlayPane extends BasePane {
 
                     Move move;
                     if(currentPlayer instanceof ConsolePlayer) {
+                        enableCanvas();
                         humanPlayerMoved = false;
                         humanPlayerNeedMove = true;
                         humanPlayerSource = null;
@@ -298,6 +299,7 @@ public class GamePlayPane extends BasePane {
                         } catch (InterruptedException interruptedException) {
                         }
                     } else {
+                        disableCanvas();
                         move = player.nextMove(fxJesonMor, availableMoves);
 
                         Piece movedPiece = fxJesonMor.getPiece(move.getSource());
@@ -395,7 +397,15 @@ public class GamePlayPane extends BasePane {
             int x = toBoardCoordinate(event.getX());
             int y = toBoardCoordinate(event.getY());
             humanPlayerDest = new Place((int) event.getX() / ViewConfig.PIECE_SIZE, (int) event.getY() / ViewConfig.PIECE_SIZE);
-            humanPlayerMove = new Move(humanPlayerSource, humanPlayerDest);
+            if(humanPlayerSource != null && humanPlayerDest != null)
+                humanPlayerMove = new Move(humanPlayerSource, humanPlayerDest);
+            else{
+                humanPlayerSource = null;
+                humanPlayerDest = null;
+                humanPlayerMove = null;
+                humanPlayerMoved = false;
+                humanPlayerNeedMove = true;
+            };
             fxJesonMor.renderBoard(gamePlayCanvas);
             var error = validateMove(fxJesonMor, humanPlayerMove);
             if (error != null) {
@@ -640,6 +650,12 @@ public class GamePlayPane extends BasePane {
         newConfiguration.setAllInitialPieces();
         fxJesonMor = new FXJesonMor(newConfiguration);
         currentPlayer = fxJesonMor.getCurrentPlayer();
+
+        if(infoPane != null)
+            centerContainer.getChildren().remove(infoPane);
+        infoPane = new GameplayInfoPane(fxJesonMor.getPlayer1Score(), fxJesonMor.getPlayer2Score(), fxJesonMor.getCurPlayerName(), ticksElapsed);
+        centerContainer.getChildren().add(infoPane);
+
         humanPlayerMoved = true;
         humanPlayerNeedMove = false;
 
