@@ -61,6 +61,7 @@ public class ValidationPane extends BasePane{
 
     private BooleanProperty isValid = new SimpleBooleanProperty(false);
 
+    String loadError;
 
     public ValidationPane() {
         connectComponents();
@@ -118,6 +119,7 @@ public class ValidationPane extends BasePane{
         //TODO
         File loaded;
         Deserializer deserializer;
+        loadError = null;
         try {
             loaded = getTargetLoadFile();
             deserializer = new Deserializer(loaded.toPath());
@@ -129,11 +131,11 @@ public class ValidationPane extends BasePane{
             loadedMoveRecords = deserializer.getMoveRecords();
             storedScores = deserializer.getStoredScores();
         } catch (Error e) {
-            showErrorConfiguration(e.getMessage());
-            return false;
+            loadError = e.getMessage();
+//            return false;
         } catch (Exception e) {
-            showErrorConfiguration(e.getMessage());
-            return false;
+            loadError = e.getMessage();
+//            return false;
         }
 
         return true;
@@ -148,7 +150,9 @@ public class ValidationPane extends BasePane{
      */
     private void onClickValidationButton(){
         //TODO
-        if(loadedConfiguration == null || loadedMoveRecords == null ||
+        if(loadError != null)
+            showErrorConfiguration("Loading error: " + loadError);
+        else if(loadedConfiguration == null || loadedMoveRecords == null ||
                 loadedGame == null || loadedcentralPlace == null || storedScores == null)
             showErrorMsg();
         else {
