@@ -4,6 +4,7 @@ import castle.comp3021.assignment.gui.controllers.AudioManager;
 import castle.comp3021.assignment.textversion.JesonMor;
 import castle.comp3021.assignment.protocol.*;
 import castle.comp3021.assignment.gui.controllers.Renderer;
+import javafx.application.Platform;
 import javafx.beans.property.IntegerProperty;
 import javafx.beans.property.SimpleIntegerProperty;
 import javafx.beans.property.SimpleStringProperty;
@@ -98,15 +99,14 @@ public class FXJesonMor extends JesonMor {
 
         // update score to 2 properties
         // TODO: update scorePlayer1Property and scorePlayer2Property
-        String nextPlayerName = player.getName().equals(getConfiguration().getPlayers()[0]) ? getConfiguration().getPlayers()[1].getName() : getConfiguration().getPlayers()[0].getName();
-        if(player.getName().equals("White"))
-            scorePlayer1Property.setValue(player.getScore());
+        String nextPlayerName = player.getName().equals(getConfiguration().getPlayers()[0].getName()) ? getConfiguration().getPlayers()[1].getName() : getConfiguration().getPlayers()[0].getName();
+        if(player.getName().equals(getConfiguration().getPlayers()[0].getName()))
+            Platform.runLater(()->scorePlayer1Property.setValue(player.getScore()));
         else
-            scorePlayer2Property.setValue(player.getScore());
+            Platform.runLater(()->scorePlayer2Property.setValue(player.getScore()));
 
-        currentPlayerNameProperty.setValue(nextPlayerName);
+        Platform.runLater(()->currentPlayerNameProperty.setValue(nextPlayerName));
         currentPlayer = player.equals(getConfiguration().getPlayers()[0]) ? getConfiguration().getPlayers()[1] : getConfiguration().getPlayers()[0];
-//        moveRecords.add(new MoveRecord(currentPlayer, move));
         numMoves++;
     }
 }
